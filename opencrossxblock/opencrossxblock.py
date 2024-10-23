@@ -4,7 +4,7 @@ from importlib.resources import files
 from typing import TypedDict
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
-from xblock.fields import Integer, Scope, String, List
+from xblock.fields import Integer, Scope, String, List, JSONField
 try: # pylint: disable=ungrouped-imports
     from xblock.utils.resources import ResourceLoader  # pylint: disable=ungrouped-imports
 except ModuleNotFoundError:  # For backward compatibility with releases older than Quince.
@@ -61,7 +61,6 @@ DEFAULT_VERTICAL = [
 ]
 
 
-
 @XBlock.needs('settings')
 @XBlock.needs('i18n')
 @XBlock.needs('user')
@@ -99,8 +98,13 @@ class OpenCrossXBlock(XBlock):
     # TO-DO: change this handler to perform your own actions.  You may need more
     # than one handler, or you may not need any handlers at all.
     @XBlock.json_handler
-    def get_data(self, data, suffix=''):
-        return {}
+    def getTask(self, data, suffix=''):
+        return {
+            'title': self.title,
+            'description': self.description,
+            'vertical': self.vertical_questions,
+            'horizontal': self.horizontal_questions,
+        }
 
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
