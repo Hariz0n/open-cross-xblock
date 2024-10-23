@@ -17,6 +17,9 @@ class QuestionType(TypedDict):
     x: int
     y: int
     length: int
+    attempts: int
+    max_attempts: int | None
+    isCorrect: bool | None
 
 
 DEFAULT_HORIZONTAL = [
