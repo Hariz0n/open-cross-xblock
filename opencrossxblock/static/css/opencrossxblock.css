@@ -1,0 +1,9 @@
+/* CSS for OpenCrossXBlock */
+
+.opencrossxblock_block .count {
+    font-weight: bold;
+}
+
+.opencrossxblock_block p {
+    cursor: pointer;
+}
