@@ -1,5 +1,19 @@
-<div class="opencrossxblock_block">
-<p>OpenCrossXBlock: count is now
-    <span class='count'>{self.count}</span> (click me to increment).
-</p>
-</div>
+<iframe scrolling="no" style="width: 100%; border: none;" data-cross-dnd srcdoc="
+        <html>
+        <head>
+            <title>OpenDNDXBlock</title>
+            <style>{{ styles }}</style>
+        </head>
+        <body>
+            <div id='root'></div>
+            <script>
+                let initApp = function(runtime, element) {
+                    console.log({ runtime, element })
+                };
+                window.initApp = initApp;
+            </script>
+            <script>{{ script }}</script>
+        </body>
+        </html>
+    ">
+</iframe>

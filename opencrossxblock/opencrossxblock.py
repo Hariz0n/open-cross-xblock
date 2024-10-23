@@ -1,25 +1,80 @@
 """TO-DO: Write a description of what this XBlock is."""
 
 from importlib.resources import files
-
+from typing import TypedDict
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
-from xblock.fields import Integer, Scope
+from xblock.fields import Integer, Scope, String, List
+try: # pylint: disable=ungrouped-imports
+    from xblock.utils.resources import ResourceLoader  # pylint: disable=ungrouped-imports
+except ModuleNotFoundError:  # For backward compatibility with releases older than Quince.
+    from xblockutils.resources import ResourceLoader
 
 
-class OpenCrossXBlock(XBlock):
-    """
-    TO-DO: document what your XBlock does.
-    """
+class QuestionType(TypedDict):
+    question: str
+    answer: str
+    x: int
+    y: int
+    length: int
 
-    # Fields are defined on the class.  You can access them in your code as
-    # self.<fieldname>.
 
-    # TO-DO: delete count, and define your own fields.
-    count = Integer(
-        default=0, scope=Scope.user_state,
-        help="A simple counter, to show something happening",
+DEFAULT_HORIZONTAL = [
+    QuestionType(
+        question='Question one',
+        answer='1',
+        x=0,
+        y=0,
+        length=3
+    ),
+    QuestionType(
+        question='Question two',
+        answer='2',
+        x=1,
+        y=2,
+        length=3
+    ),
+    QuestionType(
+        question='Question three',
+        answer='3',
+        x=2,
+        y=4,
+        length=3
     )
+]
+
+DEFAULT_VERTICAL = [
+    QuestionType(
+        question='Question one',
+        answer='1',
+        x=1,
+        y=0,
+        length=3
+    ),
+    QuestionType(
+        question='Question two',
+        answer='2',
+        x=2,
+        y=2,
+        length=3
+    )
+]
+
+
+
+@XBlock.needs('settings')
+@XBlock.needs('i18n')
+@XBlock.needs('user')
+class OpenCrossXBlock(XBlock):
+    loader = ResourceLoader(__name__)
+
+    # Настройки задания
+
+    title = String(display_name='Заголовок', scope=Scope.content, default='Задание')
+    description = String(display_name='Описание', scope=Scope.content, default='Описание')
+
+    horizontal_questions = List(display_name='Вопросы по горизонтали', scope=Scope.content, default=DEFAULT_HORIZONTAL)
+    vertical_questions = List(display_name='Вопросы по вертикали', scope=Scope.content, default=DEFAULT_VERTICAL)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -28,28 +83,24 @@ class OpenCrossXBlock(XBlock):
     # TO-DO: change this view to display your data your own way.
     def student_view(self, context=None):
         """
-        The primary view of the OpenCrossXBlock, shown to students
+        The primary view of the OpenDNDXBlock, shown to students
         when viewing courses.
         """
-        html = self.resource_string("static/html/opencrossxblock.html")
-        frag = Fragment(html.format(self=self))
-        frag.add_css(self.resource_string("static/css/opencrossxblock.css"))
-        frag.add_javascript(self.resource_string("static/js/src/opencrossxblock.js"))
-        frag.initialize_js('OpenCrossXBlock')
-        return frag
+        fragment = Fragment()
+        fragment.add_content(self.loader.render_django_template("static/html/opencrossxblock.html", context={
+            "self": self,
+            "script": self.resource_string("static/js/src/index.js"),
+            "styles": self.resource_string("static/css/styles.css")
+        }))
+        fragment.add_javascript(self.resource_string("static/js/src/init.js"))
+        fragment.initialize_js('OpenCrossXBlock')
+        return fragment
 
     # TO-DO: change this handler to perform your own actions.  You may need more
     # than one handler, or you may not need any handlers at all.
     @XBlock.json_handler
-    def increment_count(self, data, suffix=''):
-        """
-        An example handler, which increments the data.
-        """
-        # Just to show data coming in...
-        assert data['hello'] == 'world'
-
-        self.count += 1
-        return {"count": self.count}
+    def get_data(self, data, suffix=''):
+        return {}
 
     # TO-DO: change this to create the scenarios you'd like to see in the
     # workbench while developing your XBlock.
