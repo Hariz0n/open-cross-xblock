@@ -74,7 +74,7 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
       className="flex flex-col items-start gap-4"
     >
       <li className="ml-6 text-lg">{question.question}</li>
-      <div className="flex flex-col gap-x-2.5">
+      <div className="flex flex-col gap-2.5">
         <div className="flex items-center gap-2">
           <Controller
             control={form.control}
@@ -162,9 +162,9 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
         {typeof question.attempts === "number" &&
           typeof question.max_attempts === "number" &&
           question.attempts > 0 &&
-          question.max_attempts > 0 && <div>
+          question.max_attempts > 0 && <span className="font-bold text-sm">
             Попытка {question.attempts} из {question.max_attempts}
-            </div>}
+            </span>}
       </div>
     </form>
   );

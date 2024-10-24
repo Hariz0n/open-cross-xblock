@@ -11,6 +11,7 @@ except ModuleNotFoundError:  # For backward compatibility with releases older th
     from xblockutils.resources import ResourceLoader
 from xblock.scorable import ScorableXBlockMixin, Score
 from xblock.utils.studio_editable import StudioEditableXBlockMixin
+from xblock.exceptions import XBlockSaveError
 
 
 class QuestionType(TypedDict):
@@ -183,6 +184,13 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
     @XBlock.json_handler
     def check(self, data, suffix=''):
         questions = self.horizontal_questions if data['isHorizontal'] == True else self.vertical_questions
+
+        max_attempts = questions[data['index']].get('max_attempts')
+        attempts = questions[data['index']].get('attempts')
+
+        if (attempts is not None and max_attempts is not None and attempts >= max_attempts):
+            return XBlockSaveError
+        
 
         answer = questions[data['index']]['answer']
         isCorrect = answer == data['value']
