@@ -1,7 +1,8 @@
 export type TaskQuestionType = {
   question: string;
-  answer: string;
+  value?: string;
   x: number;
   y: number;
   length: number;
+  isCorrect?: boolean;
 };
