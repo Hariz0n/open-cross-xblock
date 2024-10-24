@@ -4,7 +4,7 @@ from importlib.resources import files
 from typing import TypedDict
 from web_fragments.fragment import Fragment
 from xblock.core import XBlock
-from xblock.fields import Integer, Scope, String, List, Float
+from xblock.fields import Integer, Scope, String, List, Float, Dict
 try: # pylint: disable=ungrouped-imports
     from xblock.utils.resources import ResourceLoader  # pylint: disable=ungrouped-imports
 except ModuleNotFoundError:  # For backward compatibility with releases older than Quince.
@@ -20,8 +20,9 @@ class QuestionType(TypedDict):
     x: int
     y: int
     length: int
-    attempts: int
     max_attempts: int | None
+    # TODO: remove
+    attempts: int
     isCorrect: bool | None
     value: str | None
 
@@ -70,6 +71,11 @@ DEFAULT_VERTICAL = [
     )
 ]
 
+DEFAULT_PREV_ANSWERS = {
+    'horizontal': {},
+    'vertical': {}
+}
+
 
 @XBlock.needs('settings')
 @XBlock.needs('i18n')
@@ -82,7 +88,7 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
     display_name = String(
         display_name="Название блока",
         scope=Scope.settings,
-        default="Open DND XBlock",
+        default="Open Cross XBlock",
         enforce_type=True,
     )
 
@@ -116,16 +122,25 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
         self.score = score.raw_earned
 
     def calculate_score(self):
-        correct = 0;
+        correct = 0
         total = len(self.vertical_questions) + len(self.horizontal_questions)
+        
+        print(self.previous_answers)
 
-        for q1 in self.vertical_questions:
-            if q1.get('isCorrect', False) == True:
+        for iq1, iq in enumerate(self.vertical_questions):
+            prev_answer_q1 = (self.previous_answers['vertical'] or {}).get(str(iq1), {})
+            
+            if prev_answer_q1.get('isCorrect', False) == True:
+                print('ver', iq1)
                 correct += 1
 
-        for q2 in self.horizontal_questions:
-            if q2.get('isCorrect', False) == True:
+        for iq2, q2 in enumerate(self.horizontal_questions):
+            prev_answer_q2 = (self.previous_answers['horizontal'] or {}).get(str(iq2), {})
+
+            if prev_answer_q2.get('isCorrect', False) == True:
                 correct += 1
+
+        print(correct, total)
 
         score = Score(raw_earned=(correct / float(total)) * self.weight, raw_possible=self.weight)
         self.set_score(score)
@@ -139,6 +154,8 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
 
     horizontal_questions = List(display_name='Вопросы по горизонтали', scope=Scope.content, default=DEFAULT_HORIZONTAL)
     vertical_questions = List(display_name='Вопросы по вертикали', scope=Scope.content, default=DEFAULT_VERTICAL)
+
+    previous_answers = Dict(display_name='Последние ответы', scope=Scope.user_state, default=DEFAULT_PREV_ANSWERS)
 
     editable_fields = ('title', 'description', 'horizontal_questions', 'vertical_questions', 'weight')
 
@@ -162,12 +179,20 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
         fragment.initialize_js('OpenCrossXBlock')
         return fragment
     
-    def getFilteredQuestions(self, questions):
+    def getFilteredQuestions(self, questions, isHorizontal=None):
         result = []
+        prev_answers = self.previous_answers['horizontal' if isHorizontal == True else 'vertical']
 
-        for question in questions:
+        for index, question in enumerate(questions):
+            prev_answer = prev_answers.get(str(index))
             qstn = dict(question)
             qstn.pop('answer')
+
+            if prev_answer is not None:
+                qstn['attempts'] = prev_answer['attempts']
+                qstn['isCorrect'] = prev_answer['isCorrect']
+                qstn['value'] = prev_answer['value']
+
             result.append(qstn)
 
         return result
@@ -178,31 +203,35 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
             'title': self.title,
             'description': self.description,
             'vertical': self.getFilteredQuestions(self.vertical_questions),
-            'horizontal': self.getFilteredQuestions(self.horizontal_questions),
+            'horizontal': self.getFilteredQuestions(self.horizontal_questions, True),
         }
     
     @XBlock.json_handler
     def check(self, data, suffix=''):
-        questions = self.horizontal_questions if data['isHorizontal'] == True else self.vertical_questions
+        isHorizontal = data['isHorizontal'] == True
 
-        max_attempts = questions[data['index']].get('max_attempts')
-        attempts = questions[data['index']].get('attempts')
+        questions = self.horizontal_questions if isHorizontal else self.vertical_questions
+        question = questions[data['index']] or {}
 
-        if (attempts is not None and max_attempts is not None and attempts >= max_attempts):
-            return XBlockSaveError
-        
+        previous_answers = self.previous_answers['horizontal' if isHorizontal else 'vertical']
+        previous_answer = previous_answers.get(str(data['index']), {})
 
-        answer = questions[data['index']]['answer']
-        isCorrect = answer == data['value']
-        questions[data['index']]['isCorrect'] = isCorrect
-        questions[data['index']]['value'] = data['value']
-        questions[data['index']]['attempts'] = (questions[data['index']].get('attempts', 0)) + 1
+        isCorrect = question['answer'] == data['value']
+        attempts = previous_answer.get('attempts', 0)
+
+        attempts += 1
+
+        previous_answers[str(data['index'])] = {
+            'isCorrect': isCorrect,
+            'value': data['value'],
+            'attempts': attempts
+        }
 
         self.rescore(only_if_higher=False)
 
         return {
             'isCorrect': isCorrect,
-            'attempts': questions[data['index']]['attempts'],
+            'attempts': attempts,
             'score': self.get_score()
         }
 
