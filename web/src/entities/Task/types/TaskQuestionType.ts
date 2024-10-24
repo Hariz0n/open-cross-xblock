@@ -5,4 +5,6 @@ export type TaskQuestionType = {
   y: number;
   length: number;
   isCorrect?: boolean;
+  attempts?: number;
+  max_attempts?: number;
 };

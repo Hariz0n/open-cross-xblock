@@ -1,8 +1,6 @@
 import { FC, PropsWithChildren, useState } from "react";
 import { CrossContext } from "../libs/CrossContext";
-import { useTask } from "@/entities/Task";
 import { TaskType } from "@/entities/Task/types/TaskType";
-import { CrossContextType } from "../types/CrossContextType";
 
 type CrossContextProviderProps = PropsWithChildren &
   Pick<TaskType, "horizontal" | "vertical">;

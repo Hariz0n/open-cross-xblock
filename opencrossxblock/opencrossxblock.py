@@ -28,38 +28,41 @@ class QuestionType(TypedDict):
 DEFAULT_HORIZONTAL = [
     QuestionType(
         question='Question one',
-        answer='1',
+        answer='123',
         x=0,
         y=0,
-        length=3
+        length=3,
+        max_attempts=10
     ),
     QuestionType(
         question='Question two',
-        answer='2',
+        answer='123',
         x=1,
         y=2,
-        length=3
+        length=3,
+        max_attempts=9
     ),
     QuestionType(
         question='Question three',
-        answer='3',
+        answer='123',
         x=2,
         y=4,
-        length=3
+        length=3,
+        max_attempts=8
     )
 ]
 
 DEFAULT_VERTICAL = [
     QuestionType(
         question='Question one',
-        answer='1',
+        answer='231',
         x=1,
         y=0,
         length=3
     ),
     QuestionType(
         question='Question two',
-        answer='2',
+        answer='231',
         x=2,
         y=2,
         length=3
@@ -84,7 +87,7 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
 
     weight = Float(
         display_name="Максимальное количество баллов",
-        default=1.0,
+        default=10.0,
         scope=Scope.settings,
         values={"min": 0},
     )
@@ -120,13 +123,13 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
                 correct += 1
 
         for q2 in self.horizontal_questions:
-            if q1.get('isCorrect', False) == True:
+            if q2.get('isCorrect', False) == True:
                 correct += 1
 
-        score = (correct / float(total)) * self.weight;
+        score = Score(raw_earned=(correct / float(total)) * self.weight, raw_possible=self.weight)
+        self.set_score(score)
 
-
-        return Score(raw_earned=self.score, raw_possible=self.weight)
+        return score
 
     # Настройки задания
 
@@ -135,6 +138,8 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
 
     horizontal_questions = List(display_name='Вопросы по горизонтали', scope=Scope.content, default=DEFAULT_HORIZONTAL)
     vertical_questions = List(display_name='Вопросы по вертикали', scope=Scope.content, default=DEFAULT_VERTICAL)
+
+    editable_fields = ('title', 'description', 'horizontal_questions', 'vertical_questions', 'weight')
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -177,7 +182,7 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
     
     @XBlock.json_handler
     def check(self, data, suffix=''):
-        questions = self.horizontal_questions if data['isHorizontal'] else self.vertical_questions
+        questions = self.horizontal_questions if data['isHorizontal'] == True else self.vertical_questions
 
         answer = questions[data['index']]['answer']
         isCorrect = answer == data['value']
@@ -189,7 +194,8 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
 
         return {
             'isCorrect': isCorrect,
-            'attempts': questions[data['index']]['attempts']
+            'attempts': questions[data['index']]['attempts'],
+            'score': self.get_score()
         }
 
     # TO-DO: change this to create the scenarios you'd like to see in the

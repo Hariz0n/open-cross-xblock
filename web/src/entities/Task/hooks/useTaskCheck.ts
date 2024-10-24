@@ -44,7 +44,7 @@ export const useTaskCheck = () => {
     onError: (_1, _2, context) => {
       queryClient.setQueryData([TASK_FETCH_KEY], context?.prevTask);
     },
-    onSettled: (response, _2, { index, isHorizontal, value }) => {
+    onSettled: (response, _2, { index, isHorizontal }) => {
       if (response) {
         const prevTask = queryClient.getQueryData<TaskType>([
           TASK_FETCH_KEY,
