@@ -3,9 +3,10 @@ import { useTaskCheck } from "@/entities/Task";
 import { TaskQuestionType } from "@/entities/Task/types/TaskQuestionType";
 import { cn } from "@/shared/libs";
 import { Input } from "@/shared/ui";
-import { createPipe } from "imask";
-import { FC, useEffect, useMemo } from "react";
+import { FC, useEffect } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 type ActionQuestionProps = {
   question: TaskQuestionType;
@@ -13,9 +14,11 @@ type ActionQuestionProps = {
   isHorizontal?: boolean;
 };
 
-type FormValues = {
-  value: string;
-};
+const qSchema = z.object({
+  value: z.string().regex(/^[^<_>]+$/gi),
+});
+
+type FormValues = z.infer<typeof qSchema>;
 
 export const ActionQuestion: FC<ActionQuestionProps> = ({
   index,
@@ -25,13 +28,12 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
   const { mutateAsync } = useTaskCheck();
   const cross = useCross();
   const form = useForm<FormValues>({
-    values: {
+    defaultValues: {
       value: question.value || "",
     },
     mode: "onChange",
+    resolver: zodResolver(qSchema),
   });
-
-  console.log({ cross });
 
   const submitHandler: SubmitHandler<FormValues> = async ({ value }) => {
     await mutateAsync({ index, isHorizontal, value });
@@ -44,29 +46,29 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
   const isSubmitting = form.formState.isSubmitting;
 
   const shouldShowCorrectness =
-    !isDirty && !isSubmitting && isCorrectSet && isCorrect;
+    !isDirty &&
+    !isSubmitting &&
+    isCorrectSet &&
+    isCorrect &&
+    !form.formState.errors.value;
 
   const shouldShowErrorness =
-    !isDirty && !isSubbmitted && isCorrectSet && !isCorrect;
+    !isDirty &&
+    !isSubbmitted &&
+    isCorrectSet &&
+    !isCorrect &&
+    !form.formState.errors.value;
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     if (isSubbmitted) {
       timeoutId = setTimeout(() => {
-        form.reset();
+        form.reset({}, { keepValues: true, keepErrors: true });
       }, 100);
     }
 
     () => clearTimeout(timeoutId);
   }, [isSubbmitted]);
-
-  const pipe = useMemo(
-    () =>
-      createPipe({
-        mask: "*".repeat(question.length),
-      }),
-    [question]
-  );
 
   return (
     <form
@@ -82,15 +84,18 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
             render={({ field: { onChange, ...rest } }) => (
               <Input
                 {...rest}
+                mask={"*".repeat(question.length)}
+                disabled={
+                  isSubmitting ||
+                  (question.max_attempts !== 0 &&
+                    (question.attempts ?? 0) >=
+                      (question.max_attempts ?? 99999))
+                }
                 onChange={(e) => {
-                  const ffVal = pipe(e.target.value);
+                  const ffVal = e.target.value;
                   onChange(ffVal);
 
-                  if (!cross) {
-                    return;
-                  }
-
-                  cross.setState((prev) => {
+                  cross?.setState((prev) => {
                     const res = { ...prev };
 
                     if (isHorizontal) {
@@ -136,7 +141,10 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
               type="button"
               className="flex h-12 w-12 rounded-lg items-center justify-center"
               onClick={() => {
-                form.resetField("value", { defaultValue: "" });
+                form.resetField("value", {
+                  defaultValue: "",
+                  keepTouched: true,
+                });
               }}
             >
               <svg
@@ -162,9 +170,11 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
         {typeof question.attempts === "number" &&
           typeof question.max_attempts === "number" &&
           question.attempts > 0 &&
-          question.max_attempts > 0 && <span className="font-bold text-sm">
-            Попытка {question.attempts} из {question.max_attempts}
-            </span>}
+          question.max_attempts > 0 && (
+            <span className="font-bold text-sm">
+              Попытка {question.attempts} из {question.max_attempts}
+            </span>
+          )}
       </div>
     </form>
   );

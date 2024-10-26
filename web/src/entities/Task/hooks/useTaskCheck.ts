@@ -59,6 +59,7 @@ export const useTaskCheck = () => {
         }
 
         questions[index].isCorrect = response.isCorrect;
+        questions[index].attempts = questions[index].attempts ?? 0 + 1
 
         queryClient.setQueryData<TaskType>([TASK_FETCH_KEY], {
           ...prevTask,

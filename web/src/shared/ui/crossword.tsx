@@ -115,13 +115,13 @@ export const Crossword: FC = () => {
               )}
               <svg className={cn("w-full h-full", Boolean(secondChar) && 'bg-our-red')} viewBox="0 0 48 48">
                 <text
-                  className="uppercase font-bold text-[18px]"
+                  className={cn("uppercase font-bold text-[18px]", (!char || char === '_') && 'fill-our-light-gray')}
                   textAnchor="middle"
                   x="50%"
                   y="50%"
                   dominantBaseline="middle"
                 >
-                  {char}
+                  {char || '_'}
                   {Boolean(secondChar) && ` / ${secondChar}` }
                 </text>
               </svg>

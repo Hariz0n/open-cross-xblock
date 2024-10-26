@@ -11,7 +11,7 @@ except ModuleNotFoundError:  # For backward compatibility with releases older th
     from xblockutils.resources import ResourceLoader
 from xblock.scorable import ScorableXBlockMixin, Score
 from xblock.utils.studio_editable import StudioEditableXBlockMixin
-from xblock.exceptions import XBlockSaveError
+from xblock.exceptions import JsonHandlerError
 
 
 class QuestionType(TypedDict):
@@ -212,12 +212,16 @@ class OpenCrossXBlock(ScorableXBlockMixin, StudioEditableXBlockMixin, XBlock):
 
         questions = self.horizontal_questions if isHorizontal else self.vertical_questions
         question = questions[data['index']] or {}
+        max_attempts = question.get('max_attempts', 0)
 
         previous_answers = self.previous_answers['horizontal' if isHorizontal else 'vertical']
         previous_answer = previous_answers.get(str(data['index']), {})
 
         isCorrect = question['answer'] == data['value']
         attempts = previous_answer.get('attempts', 0)
+
+        if max_attempts != 0 and attempts >= max_attempts:
+            raise JsonHandlerError(403, 'Max attempts exceeded')
 
         attempts += 1
 
