@@ -64,7 +64,7 @@ export const Crossword: FC = () => {
   }
 
   return (
-    <div className="w-full overflow-x-scroll py-16 px-0 flex items-center bg-our-light-blue rounded-3xl">
+    <div className="w-full overflow-x-auto py-16 px-0 flex items-center bg-our-light-blue rounded-3xl">
       <div style={style} className="grid px-8 mx-auto">
         {[...tileMap.entries()].map(([strPos, { char, rowLabel, columnLabel, secondChar }]) => {
           const unprocessedPos = strPos.split("-");

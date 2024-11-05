@@ -15,7 +15,7 @@ type ActionQuestionProps = {
 };
 
 const qSchema = z.object({
-  value: z.string().regex(/^[^<_>]+$/gi),
+  value: z.string().toLowerCase()
 });
 
 type FormValues = z.infer<typeof qSchema>;
@@ -84,17 +84,18 @@ export const ActionQuestion: FC<ActionQuestionProps> = ({
             render={({ field: { onChange, ...rest } }) => (
               <Input
                 {...rest}
-                mask={"*".repeat(question.length)}
+                mask={'*'.repeat(question.length)}
+                maxLength={question.length}
+                prepareChar={(char) => char.toLowerCase()}
                 disabled={
                   isSubmitting ||
                   (question.max_attempts !== 0 &&
                     (question.attempts ?? 0) >=
                       (question.max_attempts ?? 99999))
                 }
-                onChange={(e) => {
-                  const ffVal = e.target.value;
-                  onChange(ffVal);
-
+                onAccept={(ffVal) => {
+                  console.log({ffVal})
+                  onChange(ffVal)
                   cross?.setState((prev) => {
                     const res = { ...prev };
 
