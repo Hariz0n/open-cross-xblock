@@ -13,8 +13,8 @@ export const Crossword: FC = () => {
   const gridSize = calcGridSize(cross.vertical, cross.horizontal);
 
   const style = {
-    gridTemplateColumns: `repeat(${gridSize.x},minmax(64px,1fr))`,
-    gridTemplateRows: `repeat(${gridSize.y},minmax(64px,1fr))`,
+    gridTemplateColumns: `repeat(${gridSize.x},minmax(48px,48px))`,
+    gridTemplateRows: `repeat(${gridSize.y},minmax(48px,48px))`,
   } satisfies CSSProperties;
 
   const tileMap = new Map<
@@ -64,8 +64,8 @@ export const Crossword: FC = () => {
   }
 
   return (
-    <div className="w-full p-16 flex items-center justify-center bg-our-light-blue rounded-3xl">
-      <div style={style} className="grid">
+    <div className="w-full overflow-x-scroll py-16 px-0 flex items-center bg-our-light-blue rounded-3xl">
+      <div style={style} className="grid px-8 mx-auto">
         {[...tileMap.entries()].map(([strPos, { char, rowLabel, columnLabel, secondChar }]) => {
           const unprocessedPos = strPos.split("-");
           const x = Number(unprocessedPos[0]);

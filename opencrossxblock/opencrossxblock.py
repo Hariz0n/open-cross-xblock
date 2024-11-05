@@ -21,7 +21,6 @@ class QuestionType(TypedDict):
     y: int
     length: int
     max_attempts: int | None
-    # TODO: remove
     attempts: int
     isCorrect: bool | None
     value: str | None
